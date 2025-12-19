@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>流光粒子动画</title>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at top, #1b3358 0%, #0b1220 50%, #070a12 100%);
+      overflow: hidden;
+      color: #f7f7f7;
+    }
+
+    canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .content {
+      position: relative;
+      z-index: 1;
+      max-width: 700px;
+      text-align: center;
+      padding: 32px 40px;
+      background: rgba(10, 20, 35, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(10px);
+    }
+
+    .content h1 {
+      font-size: 2.4rem;
+      margin-bottom: 12px;
+      letter-spacing: 0.08em;
+    }
+
+    .content p {
+      font-size: 1.05rem;
+      line-height: 1.8;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .legend {
+      margin-top: 24px;
+      display: flex;
+      gap: 18px;
+      justify-content: center;
+      flex-wrap: wrap;
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.75);
+    }
+
+    .legend span {
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="scene"></canvas>
+  <main class="content">
+    <h1>夜空中的流光</h1>
+    <p>
+      背景是渐变的夜空，粒子在其中缓慢漂移，像是宇宙里安静的星尘。
+      文字区域提供了内容说明，让动画既有视觉氛围也有清晰信息。
+    </p>
+    <div class="legend">
+      <span>轻微呼吸</span>
+      <span>缓慢漂移</span>
+      <span>柔和光晕</span>
+    </div>
+  </main>
+
+  <script>
+    const canvas = document.getElementById("scene");
+    const context = canvas.getContext("2d");
+    const particles = [];
+    const particleCount = 120;
+
+    const resizeCanvas = () => {
+      const { innerWidth: width, innerHeight: height } = window;
+      canvas.width = width * window.devicePixelRatio;
+      canvas.height = height * window.devicePixelRatio;
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      context.scale(window.devicePixelRatio, window.devicePixelRatio);
+    };
+
+    const randomBetween = (min, max) => Math.random() * (max - min) + min;
+
+    const createParticle = () => ({
+      x: randomBetween(0, window.innerWidth),
+      y: randomBetween(0, window.innerHeight),
+      radius: randomBetween(1.2, 3.2),
+      speed: randomBetween(0.2, 0.7),
+      drift: randomBetween(-0.3, 0.3),
+      alpha: randomBetween(0.3, 0.8),
+      pulse: randomBetween(0.004, 0.012),
+    });
+
+    const initParticles = () => {
+      particles.length = 0;
+      for (let i = 0; i < particleCount; i += 1) {
+        particles.push(createParticle());
+      }
+    };
+
+    const draw = () => {
+      context.clearRect(0, 0, canvas.width, canvas.height);
+
+      particles.forEach((particle) => {
+        particle.y -= particle.speed;
+        particle.x += particle.drift;
+        particle.alpha += particle.pulse;
+
+        if (particle.alpha >= 0.85 || particle.alpha <= 0.25) {
+          particle.pulse *= -1;
+        }
+
+        if (particle.y < -10) {
+          particle.y = window.innerHeight + 10;
+          particle.x = randomBetween(0, window.innerWidth);
+        }
+
+        if (particle.x < -10 || particle.x > window.innerWidth + 10) {
+          particle.drift *= -1;
+        }
+
+        const gradient = context.createRadialGradient(
+          particle.x,
+          particle.y,
+          0,
+          particle.x,
+          particle.y,
+          particle.radius * 6
+        );
+        gradient.addColorStop(0, `rgba(135, 206, 250, ${particle.alpha})`);
+        gradient.addColorStop(1, "rgba(135, 206, 250, 0)");
+
+        context.fillStyle = gradient;
+        context.beginPath();
+        context.arc(particle.x, particle.y, particle.radius * 6, 0, Math.PI * 2);
+        context.fill();
+      });
+
+      requestAnimationFrame(draw);
+    };
+
+    resizeCanvas();
+    initParticles();
+    draw();
+
+    window.addEventListener("resize", () => {
+      resizeCanvas();
+      initParticles();
+    });
+  </script>
+</body>
+</html>
